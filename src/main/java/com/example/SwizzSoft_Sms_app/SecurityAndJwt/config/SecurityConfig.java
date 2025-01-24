@@ -113,4 +113,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return NoOpPasswordEncoder.getInstance(); // Use a secure encoder in production
     }
-}
+} 

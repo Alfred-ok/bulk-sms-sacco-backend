@@ -3,6 +3,8 @@ package com.example.SwizzSoft_Sms_app.SecurityAndJwt.controller;
 
 import com.example.SwizzSoft_Sms_app.SecurityAndJwt.dto.*;
 import com.example.SwizzSoft_Sms_app.SecurityAndJwt.webtoken.JwtUtil;
+import com.example.SwizzSoft_Sms_app.Users.AspNetUsers;
+import com.example.SwizzSoft_Sms_app.Users.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import okhttp3.MediaType;
@@ -10,11 +12,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class authController {
@@ -25,6 +30,9 @@ public class authController {
    // private AuthenticationManager authenticationManager;
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
 
@@ -128,6 +136,9 @@ public class authController {
                 // Extract the token from the response (assuming the response contains a "token" field)
                 var jwt = jwtUtil.generateToken(loginForm.getUsername());
 
+                //disabble
+                String disabled = userRepository.findByUserName(loginForm.getUsername()).get().getDisabled();
+
                 JwtAuthenticationResponse jwtAuthenticationResponse = new JwtAuthenticationResponse();
 
                 jwtAuthenticationResponse.setAccessToken(jwt);
@@ -136,6 +147,7 @@ public class authController {
                 jwtAuthenticationResponse.setResponseCode(loginResponse.getResponseCode());
                 jwtAuthenticationResponse.setResponseMessage(loginResponse.getResponseMessage());
                 jwtAuthenticationResponse.setGroupId(loginResponse.getGroupId());
+                jwtAuthenticationResponse.setDisabled(disabled);
 
                // System.out.println("jwtAuthenticationResponse JSON String: " + jwtAuthenticationResponse);
                 return jwtAuthenticationResponse;
@@ -151,3 +163,6 @@ public class authController {
 
 
 }
+
+
+

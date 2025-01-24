@@ -20,4 +20,6 @@ public class JwtAuthenticationResponse {
     private String refreshToken;
 
     private String groupId;
+
+    private String disabled;
 }

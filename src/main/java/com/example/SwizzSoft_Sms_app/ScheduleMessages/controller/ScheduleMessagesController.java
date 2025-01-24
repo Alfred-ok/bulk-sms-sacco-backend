@@ -9,14 +9,17 @@ import com.example.SwizzSoft_Sms_app.ScheduleMessages.dbo.ScheduleMessages;
 import com.example.SwizzSoft_Sms_app.ScheduleMessages.repo.ScheduleMessagesRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -332,7 +335,7 @@ public class ScheduleMessagesController {
             return ResponseEntity.notFound().build();
         }
     }
-
+/*
     @GetMapping("/get_code/{code}")
     public ResponseEntity<List<ScheduleMessages>> getByCode(
             @PathVariable Integer code,
@@ -348,4 +351,63 @@ public class ScheduleMessagesController {
         }
         return ResponseEntity.ok(messages);
     }
+
+ */
+
+
+
+
+
+
+    @GetMapping("/get_code/{code}")
+    public ResponseEntity<List<ScheduleMessages>> getByCode(
+            @PathVariable Integer code,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "200") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+
+        // Sort by "auditDate" in descending order
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "auditDate"));
+
+        // Fetch messages based on code and optional date range
+        Page<ScheduleMessages> result;
+        if (fromDate != null && toDate != null) {
+            // Filter messages by code and date range
+            result = repository.findByCodeAndAuditDateBetween(code, fromDate.atStartOfDay(), toDate.atTime(23, 59, 59), pageable);
+        } else {
+            // Filter messages by code only
+            result = repository.findByCode(code, pageable);
+        }
+
+        List<ScheduleMessages> messages = result.getContent();
+
+        if (messages.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(messages);
+        
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

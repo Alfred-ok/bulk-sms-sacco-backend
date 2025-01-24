@@ -1,5 +1,7 @@
 package com.example.SwizzSoft_Sms_app.Users;
 
+import com.example.SwizzSoft_Sms_app.SecurityAndJwt.dto.LoginResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestOperations;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -71,11 +74,24 @@ public class UserController {
     public ResponseEntity<Object> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
         try {
             String response = passwordService.resetPassword(resetPasswordDTO);
-            return ResponseEntity.ok("Password reset successful: " + response);
+            // Parse the string to remove escape characters
+            ObjectMapper tempMapper = new ObjectMapper();
+            String parsedJson = tempMapper.readTree(response).asText();
+
+            System.out.println("Parsed JSON String: " + parsedJson);
+
+            // Deserialize the cleaned JSON string into the LoginResponse class
+           // ObjectMapper mapper = new ObjectMapper();
+           // ResetPasswordResponse resetPasswordResponse = mapper.readValue(parsedJson, ResetPasswordResponse.class);
+
+            return ResponseEntity.ok(parsedJson);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error occurred: " + e.getMessage());
         }
     }
+
+
+
 
     @GetMapping("findUser/{userName}")
     public ResponseEntity<AspNetUsers> getUserByUserName(@PathVariable String userName) {

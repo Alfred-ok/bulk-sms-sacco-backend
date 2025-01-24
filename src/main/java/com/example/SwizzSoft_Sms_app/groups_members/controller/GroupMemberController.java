@@ -1,5 +1,7 @@
 package com.example.SwizzSoft_Sms_app.groups_members.controller;
 
+import com.example.SwizzSoft_Sms_app.Groups.Entity.Group;
+import com.example.SwizzSoft_Sms_app.Groups.repo.GroupRepository;
 import com.example.SwizzSoft_Sms_app.Messagein.Base64File;
 import com.example.SwizzSoft_Sms_app.groups_members.entity.FileUploadRequest;
 import com.example.SwizzSoft_Sms_app.groups_members.entity.GroupMember;
@@ -15,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/group-members")
@@ -22,6 +25,9 @@ public class GroupMemberController {
 
     @Autowired
     private GroupMemberRepository groupMemberRepository;
+
+    @Autowired
+    private GroupRepository groupRepository;
 
     // Get all group members
     @GetMapping
@@ -35,6 +41,7 @@ public class GroupMemberController {
         return groupMemberRepository.findByOrgGroupCode(orgGroupCode);
     }
 
+
     // Get a group member by ID
     @GetMapping("/{id}")
     public ResponseEntity<GroupMember> getGroupMemberById(@PathVariable int id) {
@@ -42,6 +49,8 @@ public class GroupMemberController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+
 
     @GetMapping("/getGroup{groupId}")
     public ResponseEntity<?> getGroupMembersByGroupId(@PathVariable int groupId) {
@@ -55,9 +64,29 @@ public class GroupMemberController {
 
     // Create a new group member
     @PostMapping
-    public String createGroupMember(@RequestBody GroupMember groupMember) {
+    public ResponseEntity<String> createGroupMember(@RequestBody GroupMember groupMember) {
+        // Check if the group exists
+        Optional<Group> optionalGroup = groupRepository.findById(groupMember.getGroupId());
+        if (optionalGroup.isEmpty()) {
+            return ResponseEntity.badRequest().body("Group with ID " + groupMember.getGroupId() + " does not exist.");
+        }
+
+        Group group = optionalGroup.get();
+
+        // Validate that the contact is not already present in the same group
+        boolean exists = groupMemberRepository.existsByGroupIdAndPhoneNumberAndNames(
+                group.getGroupId(),
+                groupMember.getPhoneNumber(),
+                groupMember.getNames()
+        );
+
+        if (exists) {
+            return ResponseEntity.badRequest().body("Contact already exists in the group.");
+        }
+
+        // Save the contact
         groupMemberRepository.save(groupMember);
-        return "Succesfully Added";
+        return ResponseEntity.ok("Successfully Added");
     }
 
     // Update an existing group member

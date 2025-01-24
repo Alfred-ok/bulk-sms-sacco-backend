@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,8 +22,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class messageinCRUD {
@@ -313,7 +316,7 @@ public class messageinCRUD {
         return ResponseEntity.ok(messages);
     }
 */
-
+/*
     @GetMapping("/get_code/{code}")
     public ResponseEntity<List<Messagein>> getByCode(
             @PathVariable Integer code,
@@ -331,4 +334,40 @@ public class messageinCRUD {
     }
 
 }
+*/
+
+
+    @GetMapping("/get_code/{code}")
+    public ResponseEntity<List<Messagein>> getByCode(
+            @PathVariable Integer code,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "350") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        // Sort by "auditDate" in descending order
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "auditDate"));
+
+        // Fetch messages by code
+        List<Messagein> messages = repo.findByCode(code, pageable).getContent();
+
+        // Filter messages by date range if startDate and/or endDate are provided
+        if (startDate != null || endDate != null) {
+            messages = messages.stream()
+                    .filter(msg -> {
+                        LocalDate auditDate = LocalDate.from(msg.getAuditDate()); // Assuming 'auditDate' is of type LocalDate
+                        boolean isAfterStartDate = (startDate == null) || !auditDate.isBefore(startDate);
+                        boolean isBeforeEndDate = (endDate == null) || !auditDate.isAfter(endDate);
+                        return isAfterStartDate && isBeforeEndDate;
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        if (messages.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(messages);
+    }
+    }
 
